@@ -1,0 +1,51 @@
+import rasterio
+import os
+
+# Data inputs
+folder_path = r"path_to_your_folder"  # Replace with the actual folder path
+red_band_file = os.path.join(folder_path, "red_band.tif")  # Replace with the actual Red band file name
+nir_band_file = os.path.join(folder_path, "nir_band.tif")  # Replace with the actual NIR band file name
+
+# Output pathways for calibrated bands
+calibrated_red_output = os.path.join(folder_path, "calibrated_red_band.tif")
+calibrated_nir_output = os.path.join(folder_path, "calibrated_nir_band.tif")
+
+# Input calibration coefficients
+red_scale = 0.0  #  Scale for Red band
+red_offset = 0.0  #  Offset for Red band
+nir_scale = 0.0  #  Scale for NIR band
+nir_offset = 0.0  #  Offset for NIR band
+
+# Calibrate Red band
+with rasterio.open(red_band_file) as red_src:
+    red_band = red_src.read(1).astype('float32')  # Read raw DN values
+    red_band_calibrated = (red_band * red_scale) + red_offset  # Apply calibration
+
+    # Update metadata for calibrated output
+    red_meta = red_src.meta.copy()
+    red_meta.update({
+        'dtype': 'float32'
+    })
+
+    # Save the calibrated Red band
+    with rasterio.open(calibrated_red_output, 'w', **red_meta) as red_dst:
+        red_dst.write(red_band_calibrated, 1)
+
+# Calibrate NIR band
+with rasterio.open(nir_band_file) as nir_src:
+    nir_band = nir_src.read(1).astype('float32')  # Read raw DN values
+    nir_band_calibrated = (nir_band * nir_scale) + nir_offset  # Apply calibration
+
+    # Update metadata for calibrated output
+    nir_meta = nir_src.meta.copy()
+    nir_meta.update({
+        'dtype': 'float32'
+    })
+
+    # Save the calibrated NIR band
+    with rasterio.open(calibrated_nir_output, 'w', **nir_meta) as nir_dst:
+        nir_dst.write(nir_band_calibrated, 1)
+
+print("Calibration complete. Calibrated Red and NIR bands saved:")
+print(f"  Red: {calibrated_red_output}")
+print(f"  NIR: {calibrated_nir_output}")
