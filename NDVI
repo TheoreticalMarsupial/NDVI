@@ -1,0 +1,35 @@
+import rasterio
+import numpy as np
+
+# Use raw strings to avoid issues with backslashes
+composite_image_path = r"pathway.tif"
+ndvi_output_path = r"pathway.tif"
+
+# Open the composite image
+with rasterio.open(composite_image_path) as src:
+    # Read the red and NIR bands
+    red_band = src.read(2)  # Band location
+    nir_band = src.read(1)  # Band location
+    
+    # Convert bands to float32 to avoid division issues
+    red_band = red_band.astype('float32')
+    nir_band = nir_band.astype('float32')
+
+    # Avoid division by zero by adding a small number (epsilon)
+    epsilon = 1e-6
+
+    # Calculate NDVI
+    ndvi = (nir_band - red_band) / (nir_band + red_band + epsilon)
+
+    # Set NDVI values to the range [-1, 1]
+    ndvi = np.clip(ndvi, -1, 1)
+
+    # Update the metadata to match NDVI properties
+    ndvi_meta = src.meta
+    ndvi_meta.update(dtype=rasterio.float32, count=1)
+
+# Write the NDVI to a new file
+with rasterio.open(ndvi_output_path, 'w', **ndvi_meta) as dst:
+    dst.write(ndvi, 1)
+
+print("NDVI calculation complete. NDVI saved to:", ndvi_output_path)
